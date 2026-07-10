@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dropagiftaru-prog.github.io/aru-invoice-tracker-for-freelancers/sitemap.xml
