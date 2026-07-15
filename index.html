@@ -465,6 +465,7 @@
 <div class="app">
     <header>
         <h1>📋 Invoice Tracker <small>freelancer</small></h1>
+      <div style="margin:.6rem 0 0"><a href="https://ko-fi.com/aru26" target="_blank" rel="noopener" style="display:inline-block;background:#ff5f5f;color:#fff;font-weight:600;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none">Support this tool &#9749;</a></div>
     </header>
 
     <!-- outstanding total -->
@@ -487,5 +488,83 @@
             </div>
             <div class="form-row">
                 <label for="dueDate">Due date *</label>
-                <input type="date<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
-<div style="text-align:center;margin:2rem auto"><a href="https://ko-fi.com/aru26" target="_blank" rel="noopener" style="display:inline-block;background:#ff5f5f;color:#fff;font-family:system-ui;font-weight:600;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none">Support this tool ☕</a></div>
+                <input type="date" id="dueDate" required>
+            </div>
+            <button class="btn" type="submit">Add invoice</button>
+            <p class="validation-message" id="formMsg" role="alert"></p>
+        </form>
+    </section>
+
+    <!-- invoice list -->
+    <section aria-label="invoices">
+        <div class="invoice-cards" id="invoiceList"></div>
+        <p class="empty-state" id="emptyState">No invoices yet — add your first one above. Data stays in your browser (localStorage).</p>
+    </section>
+
+    <footer class="footer-note">
+        <div style="text-align:center;margin:1.2rem auto"><a href="https://ko-fi.com/aru26" target="_blank" rel="noopener" style="display:inline-block;background:#ff5f5f;color:#fff;font-weight:600;padding:.7rem 1.4rem;border-radius:8px;text-decoration:none">Support this tool &#9749;</a></div>
+        <p>Your data never leaves this device.</p>
+    </footer>
+
+<script>
+(function () {
+    var KEY = "aru_invoices_v1";
+    var list = document.getElementById("invoiceList");
+    var empty = document.getElementById("emptyState");
+    var totalEl = document.getElementById("totalOutstanding");
+    var form = document.getElementById("invoiceForm");
+    var msg = document.getElementById("formMsg");
+
+    function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+    function save(inv) { localStorage.setItem(KEY, JSON.stringify(inv)); }
+    function fmt(n) { return "$" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+    function render() {
+        var inv = load();
+        list.innerHTML = "";
+        var due = 0;
+        inv.forEach(function (it, i) {
+            if (!it.paid) due += Number(it.amount);
+            var card = document.createElement("div");
+            card.className = "invoice-card" + (it.paid ? " paid" : " unpaid");
+            card.innerHTML =
+                '<div class="card-main"><span class="client-name"></span>' +
+                '<span class="meta">due ' + it.due + '</span></div>' +
+                '<div class="amount">' + fmt(it.amount) + '</div>' +
+                '<div class="actions-cell">' +
+                '<button class="btn-small toggle-btn" data-i="' + i + '">' + (it.paid ? "Mark unpaid" : "Mark paid") + '</button>' +
+                '<button class="btn-small delete-btn" data-i="' + i + '">Delete</button></div>';
+            card.querySelector(".client-name").textContent = it.client;
+            list.appendChild(card);
+        });
+        empty.style.display = inv.length ? "none" : "";
+        totalEl.textContent = fmt(due);
+    }
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var client = document.getElementById("clientName").value.trim();
+        var amount = parseFloat(document.getElementById("amount").value);
+        var due = document.getElementById("dueDate").value;
+        if (!client || !(amount > 0) || !due) { msg.textContent = "Please fill in all fields."; return; }
+        msg.textContent = "";
+        var inv = load();
+        inv.push({ client: client, amount: amount, due: due, paid: false });
+        save(inv); form.reset(); render();
+    });
+
+    list.addEventListener("click", function (e) {
+        var i = e.target.getAttribute("data-i");
+        if (i === null) return;
+        var inv = load();
+        if (e.target.classList.contains("delete-btn")) inv.splice(i, 1);
+        else if (e.target.classList.contains("toggle-btn")) inv[i].paid = !inv[i].paid;
+        save(inv); render();
+    });
+
+    render();
+})();
+if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }
+</script>
+</body>
+</html>
